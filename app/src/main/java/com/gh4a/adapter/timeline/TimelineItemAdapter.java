@@ -16,7 +16,7 @@ import com.gh4a.utils.IntentUtils;
 import com.gh4a.widget.ReactionBar;
 
 import org.eclipse.egit.github.core.Comment;
-import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.IssueTimelineEvent;
 import org.eclipse.egit.github.core.Reaction;
 import org.eclipse.egit.github.core.Reactions;
 import org.eclipse.egit.github.core.User;
@@ -174,7 +174,7 @@ public class TimelineItemAdapter
             } else if (item instanceof TimelineItem.TimelineReview) {
                 user = ((TimelineItem.TimelineReview) item).review.getUser();
             } else if (item instanceof TimelineItem.TimelineEvent) {
-                IssueEvent event = ((TimelineItem.TimelineEvent) item).event;
+                IssueTimelineEvent event = ((TimelineItem.TimelineEvent) item).event;
                 user = event.getAssigner();
                 if (user == null) {
                     user = event.getActor();

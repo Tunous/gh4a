@@ -6,6 +6,7 @@ import com.gh4a.Gh4Application;
 
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.IssueTimelineEvent;
 import org.eclipse.egit.github.core.RepositoryId;
 import org.eclipse.egit.github.core.service.IssueService;
 
@@ -27,7 +28,7 @@ public class IssueCommentListLoader extends BaseLoader<List<TimelineItem>> {
         IssueEvent.TYPE_REFERENCED, IssueEvent.TYPE_ASSIGNED, IssueEvent.TYPE_UNASSIGNED,
         IssueEvent.TYPE_LABELED, IssueEvent.TYPE_UNLABELED, IssueEvent.TYPE_LOCKED,
         IssueEvent.TYPE_UNLOCKED, IssueEvent.TYPE_MILESTONED, IssueEvent.TYPE_DEMILESTONED,
-        IssueEvent.TYPE_RENAMED
+        IssueEvent.TYPE_RENAMED, IssueTimelineEvent.TYPE_CROSS_REFERENCED
     );
 
     public static final Comparator<TimelineItem> TIMELINE_ITEM_COMPARATOR = new Comparator<TimelineItem>() {
@@ -57,13 +58,14 @@ public class IssueCommentListLoader extends BaseLoader<List<TimelineItem>> {
                 Gh4Application.get().getService(Gh4Application.ISSUE_SERVICE);
         List<Comment> comments = issueService.getComments(
                 new RepositoryId(mRepoOwner, mRepoName), mIssueNumber);
-        List<IssueEvent> events = issueService.getIssueEvents(mRepoOwner, mRepoName, mIssueNumber);
+        List<IssueTimelineEvent> events =
+                issueService.getIssueTimeline(mRepoOwner, mRepoName, mIssueNumber);
         List<TimelineItem> result = new ArrayList<>();
 
         for (Comment comment : comments) {
             result.add(new TimelineItem.TimelineComment(comment));
         }
-        for (IssueEvent event : events) {
+        for (IssueTimelineEvent event : events) {
             if (INTERESTING_EVENTS.contains(event.getEvent())) {
                 result.add(new TimelineItem.TimelineEvent(event));
             }

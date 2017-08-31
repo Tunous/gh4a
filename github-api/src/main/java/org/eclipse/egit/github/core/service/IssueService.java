@@ -10,30 +10,14 @@
  *******************************************************************************/
 package org.eclipse.egit.github.core.service;
 
-import static org.eclipse.egit.github.core.client.IGitHubConstants.CHARSET_UTF8;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_COMMENTS;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_EVENTS;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_ISSUES;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_LEGACY;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_REACTIONS;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_REPOS;
-import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_SEARCH;
-import static org.eclipse.egit.github.core.client.PagedRequest.PAGE_FIRST;
-import static org.eclipse.egit.github.core.client.PagedRequest.PAGE_SIZE;
-
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.reflect.TypeToken;
 
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.IRepositoryIdProvider;
 import org.eclipse.egit.github.core.IResourceProvider;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.IssueTimelineEvent;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Reaction;
@@ -47,7 +31,25 @@ import org.eclipse.egit.github.core.client.PageIterator;
 import org.eclipse.egit.github.core.client.PagedRequest;
 import org.eclipse.egit.github.core.util.UrlUtils;
 
-import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.eclipse.egit.github.core.client.IGitHubConstants.CHARSET_UTF8;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_COMMENTS;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_EVENTS;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_ISSUES;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_LEGACY;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_REACTIONS;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_REPOS;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_SEARCH;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_TIMELINE;
+import static org.eclipse.egit.github.core.client.PagedRequest.PAGE_FIRST;
+import static org.eclipse.egit.github.core.client.PagedRequest.PAGE_SIZE;
 
 /**
  * Issue service class for listing, searching, and fetching {@link Issue}
@@ -1116,6 +1118,37 @@ public class IssueService extends GitHubService {
 			String repository, int issueId) throws IOException {
 		return getAll(pageIssueEvents(user, repository, issueId));
 	}
+
+    public List<IssueTimelineEvent> getIssueTimeline(String user, String repository,
+            int issueId) throws IOException {
+        return getAll(pageIssueTimeline(user, repository, issueId));
+    }
+
+    public PageIterator<IssueTimelineEvent> pageIssueTimeline(String user, String repository,
+            int issueId) {
+        return pageIssueTimeline(user, repository, issueId, PAGE_SIZE);
+    }
+
+    public PageIterator<IssueTimelineEvent> pageIssueTimeline(String user, String repository,
+            int issueId, int size) {
+        return pageIssueTimeline(user, repository, issueId, PAGE_FIRST, size);
+    }
+
+    public PageIterator<IssueTimelineEvent> pageIssueTimeline(String user, String repository,
+            int issueId, int start, int size) {
+        verifyRepository(user, repository);
+
+        PagedRequest<IssueTimelineEvent> request = createPagedRequest(start, size);
+        StringBuilder uri = new StringBuilder(SEGMENT_REPOS);
+        uri.append('/').append(UrlUtils.encode(user)).append('/').append(repository);
+        uri.append(SEGMENT_ISSUES);
+        uri.append('/').append(issueId);
+        uri.append(SEGMENT_TIMELINE);
+        request.setUri(uri);
+        request.setType(new TypeToken<List<IssueTimelineEvent>>() {
+        }.getType());
+        return createPageIterator(request);
+    }
 
 	/**
 	 * Page events for issue in repository

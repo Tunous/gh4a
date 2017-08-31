@@ -288,6 +288,7 @@
     <string name="issue_event_renamed">Title was changed from [b]%1$s[/b] to [b]%2$s[/b] by %3$s</string>
     <string name="issue_event_locked">Issue was [b]locked[/b] by %1$s</string>
     <string name="issue_event_unlocked">Issue was unlocked by %1$s</string>
+    <string name="issue_event_cross_referenced">Issue was referenced by [b]%1$s[/b] in [issue]</string>
 
     <!-- Pull request events -->
     <string name="pull_request_event_closed">Pull request was closed by %1$s</string>

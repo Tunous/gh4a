@@ -10,6 +10,7 @@ import android.widget.ImageView;
 
 import com.gh4a.R;
 import com.gh4a.activities.CommitActivity;
+import com.gh4a.activities.IssueActivity;
 import com.gh4a.activities.UserActivity;
 import com.gh4a.loader.TimelineItem;
 import com.gh4a.utils.ApiHelpers;
@@ -20,7 +21,10 @@ import com.gh4a.widget.IntentSpan;
 import com.gh4a.widget.IssueLabelSpan;
 import com.gh4a.widget.StyleableTextView;
 
+import org.eclipse.egit.github.core.EventSource;
+import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.IssueTimelineEvent;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Rename;
 import org.eclipse.egit.github.core.User;
@@ -51,6 +55,7 @@ class EventViewHolder
         EVENT_ICONS.put(IssueEvent.TYPE_MILESTONED, R.attr.issueEventMilestonedIcon);
         EVENT_ICONS.put(IssueEvent.TYPE_DEMILESTONED, R.attr.issueEventDemilestonedIcon);
         EVENT_ICONS.put(IssueEvent.TYPE_RENAMED, R.attr.issueEventRenamedIcon);
+        EVENT_ICONS.put(IssueTimelineEvent.TYPE_CROSS_REFERENCED, R.attr.issueEventReferencedIcon);
     }
 
     private final Context mContext;
@@ -82,12 +87,12 @@ class EventViewHolder
 
     @Override
     public void bind(TimelineItem.TimelineEvent item) {
-        User user = item.event.getAssigner() != null
-                ? item.event.getAssigner() : item.event.getActor();
+        IssueTimelineEvent event = item.event;
+        User user = event.getAssigner() != null ? event.getAssigner() : event.getActor();
         AvatarHandler.assignAvatar(mAvatarView, user);
         mAvatarContainer.setTag(user);
 
-        Integer eventIconAttr = EVENT_ICONS.get(item.event.getEvent());
+        Integer eventIconAttr = EVENT_ICONS.get(event.getEvent());
         if (eventIconAttr != null) {
             mEventIconView.setImageResource(UiUtils.resolveDrawable(mContext, eventIconAttr));
             mEventIconView.setVisibility(View.VISIBLE);
@@ -95,12 +100,17 @@ class EventViewHolder
             mEventIconView.setVisibility(View.GONE);
         }
 
-        mMessageView.setText(formatEvent(item.event, user,
+        mMessageView.setText(formatEvent(event, user,
                 mMessageView.getTypefaceValue(), mIsPullRequest));
+
+        boolean isCrossReferencedEvent =
+                event.getEvent().equals(IssueTimelineEvent.TYPE_CROSS_REFERENCED);
+        if (isCrossReferencedEvent) {
+        }
     }
 
-    private CharSequence formatEvent(final IssueEvent event, final User user, int typefaceValue,
-            boolean isPullRequestEvent) {
+    private CharSequence formatEvent(final IssueTimelineEvent event, final User user,
+            int typefaceValue, boolean isPullRequestEvent) {
         String textBase = null;
         int textResId = 0;
 
@@ -198,6 +208,9 @@ class EventViewHolder
                         rename.getFrom(), rename.getTo(), ApiHelpers.getUserLogin(mContext, user));
                 break;
             }
+            case IssueTimelineEvent.TYPE_CROSS_REFERENCED:
+                textResId = R.string.issue_event_cross_referenced;
+                break;
             default:
                 return null;
         }
@@ -239,6 +252,22 @@ class EventViewHolder
             int length = label.getName().length();
             text.replace(pos, pos + 7, label.getName());
             text.setSpan(new IssueLabelSpan(mContext, label, false), pos, pos + length, 0);
+        }
+
+        pos = text.toString().indexOf("[issue]");
+        EventSource source = event.getSource();
+        if (source != null) {
+            final Issue issue = source.getIssue();
+            if (issue != null) {
+                String issueText = issue.getTitle() + " #" + issue.getNumber();
+                text.replace(pos, pos + 7, issueText);
+                text.setSpan(new IntentSpan(mContext) {
+                    @Override
+                    protected Intent getIntent() {
+                        return IssueActivity.makeIntent(mContext, mRepoOwner, mRepoName, issue.getNumber());
+                    }
+                }, pos, pos + issueText.length(), 0);
+            }
         }
 
         return text;

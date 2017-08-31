@@ -197,6 +197,8 @@ public interface IGitHubConstants {
 	/** */
 	String SEGMENT_THREADS = "/threads"; //$NON-NLS-1$
 	/** */
+	String SEGMENT_TIMELINE = "/timeline"; //$NON-NLS-1$
+	/** */
 	String SEGMENT_TREES = "/trees"; //$NON-NLS-1$
 	/** */
 	String SEGMENT_USER = "/user"; //$NON-NLS-1$

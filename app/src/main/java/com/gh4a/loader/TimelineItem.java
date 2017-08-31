@@ -11,7 +11,7 @@ import com.gh4a.utils.IntentUtils;
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.CommitComment;
 import org.eclipse.egit.github.core.CommitFile;
-import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.IssueTimelineEvent;
 import org.eclipse.egit.github.core.Review;
 
 import java.util.ArrayList;
@@ -87,9 +87,9 @@ public abstract class TimelineItem {
 
     public static class TimelineEvent extends TimelineItem {
         @NonNull
-        public final IssueEvent event;
+        public final IssueTimelineEvent event;
 
-        public TimelineEvent(@NonNull IssueEvent event) {
+        public TimelineEvent(@NonNull IssueTimelineEvent event) {
             this.event = event;
         }
 
