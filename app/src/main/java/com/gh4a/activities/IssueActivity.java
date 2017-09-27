@@ -28,8 +28,10 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.Loader;
+import android.support.v4.view.GravityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -60,7 +62,8 @@ import org.eclipse.egit.github.core.service.IssueService;
 import java.io.IOException;
 import java.util.Locale;
 
-public class IssueActivity extends BaseActivity implements View.OnClickListener {
+public class IssueActivity extends BaseActivity implements View.OnClickListener,
+        PopupMenu.OnMenuItemClickListener {
     public static Intent makeIntent(Context context, String login, String repoName, int number) {
         return makeIntent(context, login, repoName, number, null);
     }
@@ -85,6 +88,7 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
     private IssueStateTrackingFloatingActionButton mEditFab;
     private final Handler mHandler = new Handler();
     private IssueFragment mFragment;
+    private PopupMenu mQuickEditMenu;
 
     private final LoaderCallbacks<Issue> mIssueCallback = new LoaderCallbacks<Issue>(this) {
         @Override
@@ -133,6 +137,10 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         setFragment((IssueFragment) getSupportFragmentManager().findFragmentById(R.id.details));
 
         setToolbarScrollable(true);
+
+        mQuickEditMenu = new PopupMenu(this, mEditFab, GravityCompat.END);
+        mQuickEditMenu.inflate(R.menu.issue_quick_edit_menu);
+        mQuickEditMenu.setOnMenuItemClickListener(this);
 
         getSupportLoaderManager().initLoader(0, null, mIssueCallback);
         getSupportLoaderManager().initLoader(1, null, mCollaboratorCallback);
@@ -211,12 +219,12 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         boolean canClose = mIssue != null && authorized && (isCreator || isCollaborator);
         boolean canOpen = canClose && (isCollaborator || closerIsCreator);
 
-        if (!canClose || isClosed) {
-            menu.removeItem(R.id.issue_close);
-        }
-        if (!canOpen || !isClosed) {
-            menu.removeItem(R.id.issue_reopen);
-        }
+//        if (!canClose || isClosed) {
+//            menu.removeItem(R.id.issue_close);
+//        }
+//        if (!canOpen || !isClosed) {
+//            menu.removeItem(R.id.issue_reopen);
+//        }
 
         if (mIssue == null) {
             menu.removeItem(R.id.browser);
@@ -235,12 +243,12 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         switch (itemId) {
-            case R.id.issue_close:
-            case R.id.issue_reopen:
-                if (checkForAuthOrExit()) {
-                    showOpenCloseConfirmDialog(itemId == R.id.issue_reopen);
-                }
-                return true;
+//            case R.id.issue_close:
+//            case R.id.issue_reopen:
+//                if (checkForAuthOrExit()) {
+//                    showOpenCloseConfirmDialog(itemId == R.id.issue_reopen);
+//                }
+//                return true;
             case R.id.share:
                 IntentUtils.share(this, getString(R.string.share_issue_subject,
                         mIssueNumber, mIssue.getTitle(), mRepoOwner + "/" + mRepoName),
@@ -344,9 +352,7 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.edit_fab && checkForAuthOrExit()) {
-            Intent editIntent = IssueEditActivity.makeEditIntent(this,
-                    mRepoOwner, mRepoName, mIssue);
-            startActivityForResult(editIntent, REQUEST_EDIT_ISSUE);
+            mQuickEditMenu.show();
         }
     }
 
@@ -360,6 +366,24 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.edit:
+                Intent editIntent = IssueEditActivity.makeEditIntent(this, mRepoOwner, mRepoName,
+                        mIssue);
+                startActivityForResult(editIntent, REQUEST_EDIT_ISSUE);
+                break;
+            case R.id.close:
+                // TODO: Reopen
+                if (checkForAuthOrExit()) {
+                    showOpenCloseConfirmDialog(false);
+                }
+                break;
+        }
+        return false;
     }
 
     private class IssueOpenCloseTask extends ProgressDialogTask<Issue> {

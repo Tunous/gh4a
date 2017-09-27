@@ -37,15 +37,5 @@
 
         </menu>
     </item>
-    <item
-        android:id="@+id/share"
-        android:icon="@drawable/social_share"
-        android:title="@string/share"
-        app:showAsAction="never" />
 
-    <item
-        android:id="@+id/browser"
-        android:icon="@drawable/web_site"
-        android:title="@string/open_in_browser"
-        app:showAsAction="never" />
 </menu>
