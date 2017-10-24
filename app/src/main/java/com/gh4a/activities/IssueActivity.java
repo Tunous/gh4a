@@ -30,6 +30,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.content.Loader;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.PopupMenu;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -348,10 +350,21 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.edit_fab && checkForAuthOrExit()) {
-            Intent editIntent = IssueEditActivity.makeEditIntent(this,
-                    mRepoOwner, mRepoName, mIssue);
-            startActivityForResult(editIntent, REQUEST_EDIT_ISSUE);
+        if (v.getId() == R.id.edit_fab/* && checkForAuthOrExit()*/) {
+            PopupMenu popupMenu = new PopupMenu(this, mEditFab, Gravity.END);
+            popupMenu.inflate(R.menu.issue_menu);
+            popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
+                @Override
+                public void onDismiss(PopupMenu menu) {
+                    mEditFab.show();
+                }
+            });
+            popupMenu.show();
+            mEditFab.setVisibility(View.GONE);
+//
+//            Intent editIntent = IssueEditActivity.makeEditIntent(this,
+//                    mRepoOwner, mRepoName, mIssue);
+//            startActivityForResult(editIntent, REQUEST_EDIT_ISSUE);
         }
     }
 
