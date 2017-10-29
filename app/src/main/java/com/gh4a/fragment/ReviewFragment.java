@@ -58,6 +58,7 @@ public class ReviewFragment extends ListDataBaseFragment<TimelineItem>
     private String mRepoName;
     private int mIssueNumber;
     private Review mReview;
+    private boolean mIsCollaborator;
     private IntentUtils.InitialCommentMarker mInitialComment;
 
     @Override
@@ -81,7 +82,7 @@ public class ReviewFragment extends ListDataBaseFragment<TimelineItem>
     @Override
     protected RootAdapter<TimelineItem, ? extends RecyclerView.ViewHolder> onCreateAdapter() {
         mAdapter = new TimelineItemAdapter(getActivity(), mRepoOwner, mRepoName, mIssueNumber,
-                true, false, this);
+                true, false, mIsCollaborator, this);
         return mAdapter;
     }
 

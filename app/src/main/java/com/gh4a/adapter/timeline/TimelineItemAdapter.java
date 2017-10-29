@@ -43,6 +43,7 @@ public class TimelineItemAdapter
     private final int mIssueNumber;
     private final boolean mIsPullRequest;
     private final boolean mDisplayReviewDetails;
+    private final boolean mIsCollaborator;
     private final ReactionBar.ReactionDetailsCache mReactionDetailsCache =
             new ReactionBar.ReactionDetailsCache(this);
     private final OnCommentAction mActionCallback;
@@ -137,7 +138,8 @@ public class TimelineItemAdapter
     };
 
     public TimelineItemAdapter(Context context, String repoOwner, String repoName, int issueNumber,
-            boolean isPullRequest, boolean displayReviewDetails, OnCommentAction callback) {
+            boolean isPullRequest, boolean displayReviewDetails, boolean isCollaborator,
+            OnCommentAction callback) {
         super(context);
         mImageGetter = new HttpImageGetter(context);
         mRepoOwner = repoOwner;
@@ -145,6 +147,7 @@ public class TimelineItemAdapter
         mIssueNumber = issueNumber;
         mIsPullRequest = isPullRequest;
         mDisplayReviewDetails = displayReviewDetails;
+        mIsCollaborator = isCollaborator;
         mActionCallback = callback;
     }
 
@@ -217,7 +220,7 @@ public class TimelineItemAdapter
         switch (viewType) {
             case VIEW_TYPE_COMMENT:
                 view = inflater.inflate(R.layout.row_timeline_comment, parent, false);
-                holder = new CommentViewHolder(view, mImageGetter, mRepoOwner,
+                holder = new CommentViewHolder(view, mImageGetter, mRepoOwner, mIsCollaborator,
                         mReactionDetailsCache, mCommentCallback);
                 break;
             case VIEW_TYPE_EVENT:

@@ -45,6 +45,7 @@ class CommentViewHolder
     private final HttpImageGetter mImageGetter;
     private final Callback mCallback;
     private final String mRepoOwner;
+    private final boolean mIsCollaborator;
 
     private final ImageView ivGravatar;
     private final StyleableTextView tvDesc;
@@ -72,13 +73,15 @@ class CommentViewHolder
     }
 
     public CommentViewHolder(View view, HttpImageGetter imageGetter, String repoOwner,
-            ReactionBar.ReactionDetailsCache reactionDetailsCache, Callback callback) {
+            boolean isCollaborator, ReactionBar.ReactionDetailsCache reactionDetailsCache,
+            Callback callback) {
         super(view);
 
         mContext = view.getContext();
         mImageGetter = imageGetter;
         mCallback = callback;
         mRepoOwner = repoOwner;
+        mIsCollaborator = isCollaborator;
 
         ivGravatar = view.findViewById(R.id.iv_gravatar);
         ivGravatar.setOnClickListener(this);
@@ -168,7 +171,8 @@ class CommentViewHolder
 
         String ourLogin = Gh4Application.get().getAuthLogin();
         boolean canEdit = ApiHelpers.loginEquals(user, ourLogin)
-                || ApiHelpers.loginEquals(mRepoOwner, ourLogin);
+                || ApiHelpers.loginEquals(mRepoOwner, ourLogin)
+                || mIsCollaborator;
 
         Menu menu = mPopupMenu.getMenu();
         menu.findItem(R.id.edit).setVisible(canEdit);
