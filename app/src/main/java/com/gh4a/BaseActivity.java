@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.CallSuper;
 import android.support.annotation.IdRes;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
@@ -189,6 +190,11 @@ public abstract class BaseActivity extends AppCompatActivity implements
         return null;
     }
 
+    @LayoutRes
+    protected int getRightNavigationDrawerLayoutResource() {
+        return 0;
+    }
+
     @IdRes
     protected int getInitialRightDrawerSelection() {
         return 0;
@@ -344,13 +350,31 @@ public abstract class BaseActivity extends AppCompatActivity implements
             onPrepareRightNavigationDrawerMenu(mRightDrawer.getMenu());
 
             mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT);
-        } else {
-            mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT);
+            return;
         }
+
+        int drawerLayoutResId = getRightNavigationDrawerLayoutResource();
+        if (drawerLayoutResId > 0) {
+            mRightDrawer.removeHeaderView(mRightDrawerHeader);
+
+            ViewGroup drawerLayout = (ViewGroup) getLayoutInflater()
+                    .inflate(R.layout.drawer_right_container, mRightDrawer);
+            ViewGroup container = drawerLayout.findViewById(R.id.right_drawer_container);
+            container.addView(mRightDrawerHeader);
+
+            onPrepareRightNavigationDrawerLayout(container);
+
+            mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT);
+            return;
+        }
+
+        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT);
     }
 
     protected void onPrepareRightNavigationDrawerMenu(Menu menu) {
+    }
 
+    protected void onPrepareRightNavigationDrawerLayout(ViewGroup view) {
     }
 
     protected void goToToplevelActivity() {

@@ -255,6 +255,15 @@ public class UiUtils {
         return color;
     }
 
+    public static int resolveDimension(Context context, int styledAttributeId) {
+        TypedArray a = context.obtainStyledAttributes(new int[] {
+            styledAttributeId
+        });
+        int dimen = a.getDimensionPixelSize(0, 0);
+        a.recycle();
+        return dimen;
+    }
+
     private static void enqueueDownload(Context context, Uri uri, String fileName,
             String description, String mimeType, String mediaType, boolean wifiOnly) {
         final DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);

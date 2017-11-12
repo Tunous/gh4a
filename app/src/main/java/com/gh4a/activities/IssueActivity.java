@@ -19,6 +19,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,14 +32,19 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.Loader;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.AppCompatTextView;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.gh4a.BaseActivity;
 import com.gh4a.Gh4Application;
@@ -49,13 +56,17 @@ import com.gh4a.loader.IssueLoader;
 import com.gh4a.loader.LoaderCallbacks;
 import com.gh4a.loader.LoaderResult;
 import com.gh4a.utils.ApiHelpers;
+import com.gh4a.utils.AvatarHandler;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.UiUtils;
 import com.gh4a.widget.BottomSheetCompatibleScrollingViewBehavior;
 import com.gh4a.widget.IssueStateTrackingFloatingActionButton;
 
 import org.eclipse.egit.github.core.Issue;
+import org.eclipse.egit.github.core.Label;
+import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.RepositoryId;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
 
 import java.io.IOException;
@@ -180,6 +191,8 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         updateHeader();
         updateFabVisibility();
         setContentShown(true);
+
+        inflateDrawerLayout();
     }
 
     private void setFragment(IssueFragment fragment) {
@@ -308,6 +321,77 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         super.onBackPressed();
     }
 
+    @Override
+    protected int getRightNavigationDrawerLayoutResource() {
+        return R.layout.drawer_right_container;
+    }
+
+    @Override
+    protected void onPrepareRightNavigationDrawerLayout(ViewGroup view) {
+        mDrawerLayout = getLayoutInflater().inflate(R.layout.issue_drawer, view);
+    }
+
+    private View mDrawerLayout;
+
+    private void inflateDrawerLayout() {
+        ViewGroup assigneeContainer = mDrawerLayout.findViewById(R.id.assignee_container);
+        assigneeContainer.removeAllViews();
+        if (mIssue.getAssignees().isEmpty()) {
+            TextView noAssigneesView = new AppCompatTextView(this);
+            noAssigneesView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(IssueActivity.this, "Assign yourself", Toast.LENGTH_SHORT).show();
+                }
+            });
+            noAssigneesView.setText("No one -- assign yourself");
+            assigneeContainer.addView(noAssigneesView);
+        } else {
+            for (User assignee : mIssue.getAssignees()) {
+                View assigneeView = getLayoutInflater()
+                        .inflate(R.layout.row_assignee, assigneeContainer, false);
+                ImageView avatarView = assigneeView.findViewById(R.id.iv_assignee);
+                AvatarHandler.assignAvatar(avatarView, assignee);
+
+                TextView loginView = assigneeView.findViewById(R.id.tv_assignee);
+                loginView.setText(ApiHelpers.getUserLogin(this, assignee));
+                assigneeContainer.addView(assigneeView);
+            }
+        }
+
+        ViewGroup labelContainer = mDrawerLayout.findViewById(R.id.label_container);
+        labelContainer.removeAllViews();
+        if (mIssue.getLabels().isEmpty()) {
+            TextView noLabelsView = new AppCompatTextView(this);
+            noLabelsView.setText("None yet");
+            labelContainer.addView(noLabelsView);
+        } else {
+            for (Label label : mIssue.getLabels()) {
+                TextView labelView = (TextView) getLayoutInflater()
+                        .inflate(R.layout.view_label_item, labelContainer, false);
+                int color = Color.parseColor("#" + label.getColor());
+                ViewCompat.setBackgroundTintList(labelView, ColorStateList.valueOf(color));
+                labelView.setText(label.getName());
+                labelContainer.addView(labelView);
+            }
+        }
+
+        TextView milestoneView = mDrawerLayout.findViewById(R.id.milestone_view);
+        ProgressBar milestoneProgressBar = mDrawerLayout.findViewById(R.id.milestone_progress_bar);
+        if (mIssue.getMilestone() == null) {
+            milestoneView.setText("No milestone");
+            milestoneProgressBar.setVisibility(View.GONE);
+        } else {
+            Milestone milestone = mIssue.getMilestone();
+            milestoneView.setText(milestone.getTitle());
+
+            float totalCount = milestone.getOpenIssues() + milestone.getClosedIssues();
+            int progress = (int) ((milestone.getClosedIssues() / totalCount) * 100);
+            milestoneProgressBar.setProgress(progress);
+            milestoneProgressBar.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void showOpenCloseConfirmDialog(final boolean reopen) {
         @StringRes int messageResId = reopen
                 ? R.string.reopen_issue_confirm : R.string.close_issue_confirm;
@@ -360,10 +444,8 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.edit_fab && checkForAuthOrExit()) {
-            Intent editIntent = IssueEditActivity.makeEditIntent(this,
-                    mRepoOwner, mRepoName, mIssue);
-            startActivityForResult(editIntent, REQUEST_EDIT_ISSUE);
+        if (v.getId() == R.id.edit_fab) {
+            toggleRightSideDrawer();
         }
     }
 
