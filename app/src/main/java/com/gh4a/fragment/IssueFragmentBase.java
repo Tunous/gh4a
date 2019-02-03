@@ -55,6 +55,7 @@ import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -73,15 +74,21 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
     private CommentBoxFragment mCommentFragment;
     private IssueEventAdapter mAdapter;
     private HttpImageGetter mImageGetter;
+    private List<User> mCollaborators;
 
     protected static Bundle buildArgs(String repoOwner, String repoName,
-            Issue issue, boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment) {
+            Issue issue, boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment,
+            List<User> mCollaborators) {
         Bundle args = new Bundle();
         args.putString("owner", repoOwner);
         args.putString("repo", repoName);
         args.putSerializable("issue", issue);
         args.putSerializable("collaborator", isCollaborator);
         args.putParcelable("initial_comment", initialComment);
+
+        ArrayList<User> users = new ArrayList<>(mCollaborators);
+
+        args.putSerializable("collaborators", users);
         return args;
     }
 
@@ -95,6 +102,7 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
         mIssue = (Issue) args.getSerializable("issue");
         mIsCollaborator = args.getBoolean("collaborator");
         mInitialComment = args.getParcelable("initial_comment");
+        mCollaborators = (List<User>) args.getSerializable("collaborators");
         args.remove("initial_comment");
 
         updateCommentLockState();
@@ -252,6 +260,7 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
         if (mIssue.getUser() != null) {
             users.add(mIssue.getUser());
         }
+        users.addAll(mCollaborators);
         mCommentFragment.setMentionUsers(users);
     }
 

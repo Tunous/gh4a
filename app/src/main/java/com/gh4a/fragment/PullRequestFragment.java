@@ -52,6 +52,7 @@ import org.eclipse.egit.github.core.PullRequest;
 import org.eclipse.egit.github.core.PullRequestMarker;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryId;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
 import org.eclipse.egit.github.core.service.PullRequestService;
 
@@ -78,12 +79,12 @@ public class PullRequestFragment extends IssueFragmentBase {
     };
 
     public static PullRequestFragment newInstance(PullRequest pr, Issue issue,
-            boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment) {
+            boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment, List<User> mCollaborators) {
         PullRequestFragment f = new PullRequestFragment();
 
         Repository repo = pr.getBase().getRepo();
         Bundle args = buildArgs(repo.getOwner().getLogin(), repo.getName(),
-                issue, isCollaborator, initialComment);
+                issue, isCollaborator, initialComment, mCollaborators);
         args.putSerializable("pr", pr);
         f.setArguments(args);
 

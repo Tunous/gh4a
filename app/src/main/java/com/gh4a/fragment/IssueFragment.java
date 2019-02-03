@@ -18,15 +18,17 @@ import com.gh4a.utils.IntentUtils;
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.RepositoryId;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
 
 import java.util.List;
 
 public class IssueFragment extends IssueFragmentBase {
     public static IssueFragment newInstance(String repoOwner, String repoName, Issue issue,
-            boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment) {
+            boolean isCollaborator, IntentUtils.InitialCommentMarker initialComment,
+            List<User> mCollaborators) {
         IssueFragment f = new IssueFragment();
-        f.setArguments(buildArgs(repoOwner, repoName, issue, isCollaborator, initialComment));
+        f.setArguments(buildArgs(repoOwner, repoName, issue, isCollaborator, initialComment, mCollaborators));
         return f;
     }
 

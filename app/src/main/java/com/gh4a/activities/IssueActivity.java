@@ -40,10 +40,12 @@ import com.gh4a.Gh4Application;
 import com.gh4a.ProgressDialogTask;
 import com.gh4a.R;
 import com.gh4a.fragment.IssueFragment;
+import com.gh4a.loader.AssigneeListLoader;
 import com.gh4a.loader.IsCollaboratorLoader;
 import com.gh4a.loader.IssueLoader;
 import com.gh4a.loader.LoaderCallbacks;
 import com.gh4a.loader.LoaderResult;
+import com.gh4a.loader.ProgressDialogLoaderCallbacks;
 import com.gh4a.utils.ApiHelpers;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.UiUtils;
@@ -51,9 +53,11 @@ import com.gh4a.widget.IssueStateTrackingFloatingActionButton;
 
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.RepositoryId;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 public class IssueActivity extends BaseActivity implements View.OnClickListener {
@@ -81,6 +85,7 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
     private IssueStateTrackingFloatingActionButton mEditFab;
     private final Handler mHandler = new Handler();
     private IssueFragment mFragment;
+    private List<User> mCollaborators;
 
     private final LoaderCallbacks<Issue> mIssueCallback = new LoaderCallbacks<Issue>(this) {
         @Override
@@ -108,6 +113,20 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         }
     };
 
+    private final LoaderCallbacks<List<User>> mAssigneeListCallback =
+            new ProgressDialogLoaderCallbacks<List<User>>(this, this) {
+                @Override
+                protected Loader<LoaderResult<List<User>>> onCreateLoader() {
+                    return new AssigneeListLoader(IssueActivity.this, mRepoOwner, mRepoName);
+                }
+
+                @Override
+                protected void onResultReady(List<User> result) {
+                    mCollaborators = result;
+                    showUiIfDone();
+                }
+            };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,6 +151,7 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
 
         getSupportLoaderManager().initLoader(0, null, mIssueCallback);
         getSupportLoaderManager().initLoader(1, null, mCollaboratorCallback);
+        getSupportLoaderManager().initLoader(2, null, mAssigneeListCallback);
     }
 
     @Override
@@ -145,11 +165,11 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
     }
 
     private void showUiIfDone() {
-        if (mIssue == null || mIsCollaborator == null) {
+        if (mIssue == null || mIsCollaborator == null || mCollaborators == null) {
             return;
         }
         setFragment(IssueFragment.newInstance(mRepoOwner, mRepoName,
-                mIssue, mIsCollaborator, mInitialComment));
+                mIssue, mIsCollaborator, mInitialComment, mCollaborators));
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.details, mFragment)
                 .commitAllowingStateLoss();
@@ -268,7 +288,7 @@ public class IssueActivity extends BaseActivity implements View.OnClickListener 
         });
 
         supportInvalidateOptionsMenu();
-        forceLoaderReload(0, 1);
+        forceLoaderReload(0, 1, 2);
         super.onRefresh();
     }
 

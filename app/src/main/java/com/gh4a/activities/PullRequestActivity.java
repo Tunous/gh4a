@@ -45,10 +45,12 @@ import com.gh4a.R;
 import com.gh4a.fragment.CommitCompareFragment;
 import com.gh4a.fragment.PullRequestFilesFragment;
 import com.gh4a.fragment.PullRequestFragment;
+import com.gh4a.loader.AssigneeListLoader;
 import com.gh4a.loader.IsCollaboratorLoader;
 import com.gh4a.loader.IssueLoader;
 import com.gh4a.loader.LoaderCallbacks;
 import com.gh4a.loader.LoaderResult;
+import com.gh4a.loader.ProgressDialogLoaderCallbacks;
 import com.gh4a.loader.PullRequestLoader;
 import com.gh4a.utils.ApiHelpers;
 import com.gh4a.utils.IntentUtils;
@@ -64,6 +66,7 @@ import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.PullRequestService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 public class PullRequestActivity extends BasePagerActivity implements
@@ -101,6 +104,7 @@ public class PullRequestActivity extends BasePagerActivity implements
 
     private ViewGroup mHeader;
     private int[] mHeaderColorAttrs;
+    private List<User> mCollaborators;
 
     private static final int[] TITLES = new int[]{
             R.string.pull_request_conversation, R.string.commits, R.string.pull_request_files
@@ -165,6 +169,20 @@ public class PullRequestActivity extends BasePagerActivity implements
         }
     };
 
+    private final LoaderCallbacks<List<User>> mAssigneeListCallback =
+            new ProgressDialogLoaderCallbacks<List<User>>(this, this) {
+                @Override
+                protected Loader<LoaderResult<List<User>>> onCreateLoader() {
+                    return new AssigneeListLoader(PullRequestActivity.this, mRepoOwner, mRepoName);
+                }
+
+                @Override
+                protected void onResultReady(List<User> result) {
+                    mCollaborators = result;
+                    showContentIfReady();
+                }
+            };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -185,6 +203,7 @@ public class PullRequestActivity extends BasePagerActivity implements
         getSupportLoaderManager().initLoader(0, null, mPullRequestCallback);
         getSupportLoaderManager().initLoader(1, null, mIssueCallback);
         getSupportLoaderManager().initLoader(2, null, mCollaboratorCallback);
+        getSupportLoaderManager().initLoader(3, null, mAssigneeListCallback);
     }
 
     @Override
@@ -293,7 +312,7 @@ public class PullRequestActivity extends BasePagerActivity implements
         }
         mHeader.setVisibility(View.GONE);
         mHeaderColorAttrs = null;
-        forceLoaderReload(0, 1, 2);
+        forceLoaderReload(0, 1, 2, 3);
         invalidateTabs();
         super.onRefresh();
     }
@@ -320,7 +339,7 @@ public class PullRequestActivity extends BasePagerActivity implements
                     mPullRequestNumber, mPullRequest.getHead().getSha());
         } else {
             Fragment f = PullRequestFragment.newInstance(mPullRequest,
-                    mIssue, mIsCollaborator, mInitialComment);
+                    mIssue, mIsCollaborator, mInitialComment, mCollaborators);
             mInitialComment = null;
             return f;
         }
@@ -366,7 +385,7 @@ public class PullRequestActivity extends BasePagerActivity implements
     }
 
     private void showContentIfReady() {
-        if (mPullRequest != null && mIssue != null && mIsCollaborator != null) {
+        if (mPullRequest != null && mIssue != null && mIsCollaborator != null && mCollaborators != null) {
             setContentShown(true);
             invalidateTabs();
             updateFabVisibility();
