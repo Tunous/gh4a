@@ -38,6 +38,7 @@ import com.gh4a.widget.StyleableTextView;
 
 import org.eclipse.egit.github.core.CommitComment;
 import org.eclipse.egit.github.core.CommitFile;
+import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.IssueEvent;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Rename;
@@ -70,18 +71,29 @@ public class IssueEventAdapter extends CommentAdapterBase<IssueEventHolder> {
         EVENT_ICONS.put(IssueEvent.TYPE_RENAMED, R.attr.issueEventRenamedIcon);
     }
 
-    private final int mIssueId;
+    private final Issue mIssue;
     private boolean mLocked;
 
     public IssueEventAdapter(Context context, String repoOwner, String repoName,
-            int issueId, OnCommentAction actionCallback) {
+            Issue issue, OnCommentAction actionCallback) {
         super(context, repoOwner, repoName, actionCallback);
-        mIssueId = issueId;
+        mIssue = issue;
     }
 
     public void setLocked(boolean locked) {
         mLocked = locked;
         notifyDataSetChanged();
+    }
+
+    @Override
+    protected boolean isFiltered(CharSequence filter, IssueEventHolder object) {
+        return object.comment != null &&
+                object.comment.getBodyText().toLowerCase().contains(filter.toString().toLowerCase());
+    }
+
+    @Override
+    protected boolean isHeaderFiltered(CharSequence filter) {
+        return mIssue.getBodyText().toLowerCase().contains(filter.toString().toLowerCase());
     }
 
     @Override
@@ -107,7 +119,7 @@ public class IssueEventAdapter extends CommentAdapterBase<IssueEventHolder> {
     @Override
     protected String getShareSubject(IssueEventHolder item) {
         return mContext.getString(R.string.share_comment_subject,
-                item.comment.getId(), mIssueId, mRepoOwner + "/" + mRepoName);
+                item.comment.getId(), mIssue.getNumber(), mRepoOwner + "/" + mRepoName);
     }
 
     @Override
@@ -148,7 +160,7 @@ public class IssueEventAdapter extends CommentAdapterBase<IssueEventHolder> {
                         @Override
                         protected Intent getIntent() {
                             return PullRequestDiffViewerActivity.makeIntent(mContext,
-                                    mRepoOwner, mRepoName, mIssueId,
+                                    mRepoOwner, mRepoName, mIssue.getNumber(),
                                     commitComment.getCommitId(), commitComment.getPath(),
                                     file.getPatch(), null, commitComment.getPosition(),
                                     -1, -1, false);

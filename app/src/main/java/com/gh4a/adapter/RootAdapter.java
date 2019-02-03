@@ -68,6 +68,9 @@ public abstract class RootAdapter<T, VH extends RecyclerView.ViewHolder>
     private int mHighlightPosition = -1;
     private boolean mHolderCreated = false;
 
+    private boolean mIsHeaderFiltered = true;
+    private boolean mIsFooterFiltered = true;
+
     private static final int VIEW_TYPE_HEADER = 0;
     private static final int VIEW_TYPE_FOOTER = 1;
     private static final int VIEW_TYPE_ITEM = 2;
@@ -79,9 +82,13 @@ public abstract class RootAdapter<T, VH extends RecyclerView.ViewHolder>
         protected FilterResults performFiltering(CharSequence constraint) {
             FilterResults results = new FilterResults();
             if (TextUtils.isEmpty(constraint)) {
+                mIsHeaderFiltered = true;
+                mIsFooterFiltered = true;
                 results.values = mUnfilteredObjects;
                 results.count = mUnfilteredObjects.size();
             } else {
+                mIsHeaderFiltered = isHeaderFiltered(constraint);
+                mIsFooterFiltered = isFooterFiltered(constraint);
                 final ArrayList<T> filtered = new ArrayList<>();
                 for (T object : mUnfilteredObjects) {
                     if (isFiltered(constraint, object)) {
@@ -142,22 +149,23 @@ public abstract class RootAdapter<T, VH extends RecyclerView.ViewHolder>
     @Override
     public int getItemCount() {
         return mObjects.size()
-                + (mHeaderView != null ? 1 : 0)
-                + (mFooterView != null ? 1 : 0);
+                + (mHeaderView != null && mIsHeaderFiltered ? 1 : 0)
+                + (mFooterView != null && mIsFooterFiltered ? 1 : 0);
     }
 
     @Override
     public int getItemViewType(int position) {
-        int itemStart = mHeaderView != null ? 1 : 0;
-        if (mHeaderView != null && position == 0) {
+        int itemStart = mHeaderView != null && mIsHeaderFiltered ? 1 : 0;
+        if (mHeaderView != null && position == 0 && mIsHeaderFiltered) {
             return VIEW_TYPE_HEADER;
-        } else if (mFooterView != null && position == itemStart + mObjects.size()) {
-            return VIEW_TYPE_FOOTER;
-        } else {
-            int viewType = getItemViewType(getItem(position - itemStart));
-            assert viewType >= CUSTOM_VIEW_TYPE_START;
-            return viewType;
         }
+        if (mFooterView != null && position == itemStart + mObjects.size() && mIsFooterFiltered) {
+            return VIEW_TYPE_FOOTER;
+        }
+
+        int viewType = getItemViewType(getItem(position - itemStart));
+        assert viewType >= CUSTOM_VIEW_TYPE_START;
+        return viewType;
     }
 
     public int getCount() {
@@ -169,7 +177,7 @@ public abstract class RootAdapter<T, VH extends RecyclerView.ViewHolder>
     }
 
     public T getItemFromAdapterPosition(int position) {
-        return mObjects.get(position - (mHeaderView != null ? 1 : 0));
+        return mObjects.get(position - (mHeaderView != null && mIsHeaderFiltered ? 1 : 0));
     }
 
     /**
@@ -268,6 +276,12 @@ public abstract class RootAdapter<T, VH extends RecyclerView.ViewHolder>
             int viewType);
     protected abstract void onBindViewHolder(VH holder, T item);
     protected boolean isFiltered(CharSequence filter, T object) {
+        return true;
+    }
+    protected boolean isHeaderFiltered(CharSequence filter) {
+        return true;
+    }
+    protected boolean isFooterFiltered(CharSequence filter) {
         return true;
     }
     protected int getItemViewType(T item) {

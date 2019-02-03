@@ -21,11 +21,16 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -60,7 +65,8 @@ import java.util.Set;
 
 public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventHolder> implements
         View.OnClickListener, IssueEventAdapter.OnCommentAction<IssueEventHolder>,
-        CommentBoxFragment.Callback {
+        CommentBoxFragment.Callback, MenuItemCompat.OnActionExpandListener,
+        SearchView.OnCloseListener, SearchView.OnQueryTextListener {
     protected static final int REQUEST_EDIT = 1000;
 
     protected View mListHeaderView;
@@ -98,6 +104,24 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
         args.remove("initial_comment");
 
         updateCommentLockState();
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.search_menu, menu);
+        MenuItem searchItem = menu.findItem(R.id.search);
+        MenuItemCompat.setOnActionExpandListener(searchItem, this);
+
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+//        if (mSearchQuery != null) {
+//            MenuItemCompat.expandActionView(searchItem);
+//            searchView.setQuery(mSearchQuery, false);
+//        }
+        searchView.setOnCloseListener(this);
+        searchView.setOnQueryTextListener(this);
+
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
@@ -191,7 +215,7 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
     @Override
     protected RootAdapter<IssueEventHolder, ? extends RecyclerView.ViewHolder> onCreateAdapter() {
         mAdapter = new IssueEventAdapter(getActivity(), mRepoOwner, mRepoName,
-                mIssue.getNumber(), this);
+                mIssue, this);
         mAdapter.setLocked(isLocked());
         return mAdapter;
     }
@@ -398,10 +422,43 @@ public abstract class IssueFragmentBase extends ListDataBaseFragment<IssueEventH
                 .show();
     }
 
+    public void searchIssues(String constraint) {
+        mAdapter.getFilter().filter(constraint);
+    }
+
     protected abstract void bindSpecialViews(View headerView);
     protected abstract void assignHighlightColor();
     protected abstract void deleteCommentInBackground(RepositoryId repoId, Comment comment)
             throws Exception;
+
+    @Override
+    public boolean onMenuItemActionExpand(MenuItem item) {
+        return true;
+    }
+
+    @Override
+    public boolean onMenuItemActionCollapse(MenuItem item) {
+        searchIssues(null);
+        return true;
+    }
+
+    @Override
+    public boolean onClose() {
+        searchIssues(null);
+        return true;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        searchIssues(query);
+        return true;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        searchIssues(newText);
+        return true;
+    }
 
     private class DeleteCommentTask extends ProgressDialogTask<Void> {
         private final Comment mComment;
